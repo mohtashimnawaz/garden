@@ -4,6 +4,8 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import PlantRenderer from './PlantRenderer';
 import { useInteractions } from '../lib/useInteractions';
+import { usePlantActivity } from '../lib/usePlantActivity';
+import { generateFromGrowth } from '../lib/plant-generator';
 
 export default function GardenScene({ plants = [] }: { plants?: any[] }) {
   const [waterEvents, setWaterEvents] = useState<Record<string, number>>({});
@@ -42,12 +44,23 @@ export default function GardenScene({ plants = [] }: { plants?: any[] }) {
         <Suspense fallback={null}>
           {plants.map((p, i) => {
             const x = (i - (plants.length - 1) / 2) * 0.9;
-            return (
-              <PlantRenderer key={p.id} dna={p.dna} position={[x, 0, 0]} waterTimestamp={waterEvents[p.id]} />
-            );
+            return <PlantSlot key={p.id} p={p} x={x} waterTimestamp={waterEvents[p.id]} />;
           })}
         </Suspense>
+
+        {/* per-plant child that may use hooks */}
+        
+        
+        
       </Canvas>
     </div>
   );
 }
+
+function PlantSlot({ p, x, waterTimestamp }: { p: any; x: number; waterTimestamp?: number }) {
+  const { counts } = usePlantActivity(p.id);
+  // generate dna from growth -> seed with plant id
+  const dna = generateFromGrowth(counts.growth || 0, p.id || 'seed');
+  return <PlantRenderer dna={dna} growth={counts.growth || 0} position={[x, 0, 0]} waterTimestamp={waterTimestamp} />;
+}
+

@@ -99,8 +99,18 @@ export function useInteractions(onInsert?: (row: Interaction) => void) {
       if (error) {
         // Log full error details to help diagnose 400 responses (RLS / validation issues)
         try { console.error('sendInteraction error details', JSON.stringify(error, null, 2)); } catch {}
-        console.error('sendInteraction error info', { plantId, kind, payload, error });
-        return { ok: false, error: error.message || error.details || String(error), status: (error as any)?.status };
+        const e: any = error;
+        let friendly = e.message || e.details || String(e);
+
+        // Common postgresql error codes and messages
+        if (e.code === '23503' || (e.details && /foreign key/i.test(e.details))) {
+          friendly = 'Plant not found (foreign key violation) — ensure the plant exists in the database.';
+        } else if ((e.message && /row-level security/i.test(e.message)) || (e.details && /policy/i.test(e.details)) || (e.message && /violates/i.test(e.message))) {
+          friendly = 'Insert blocked by DB policy (RLS) or can_interact check. You may be rate-limited or not authorized to interact with this plant.';
+        }
+
+        console.error('sendInteraction error info', { plantId, kind, payload, friendly, raw: e });
+        return { ok: false, error: friendly, raw: e, status: e.status || e.code };
       }
 
       console.debug('sendInteraction result', { data });

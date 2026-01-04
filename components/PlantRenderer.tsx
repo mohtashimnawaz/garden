@@ -5,11 +5,12 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { geometryFromDNA } from '../lib/plant-generator';
 
-export default function PlantRenderer({ dna, position = [0, 0, 0], waterTimestamp }: { dna: any; position?: [number, number, number]; waterTimestamp?: number }) {
+export default function PlantRenderer({ dna, growth = 0, position = [0, 0, 0], waterTimestamp }: { dna: any; growth?: number; position?: [number, number, number]; waterTimestamp?: number }) {
   const group = useRef<THREE.Group>(null);
-  const geom = useMemo(() => geometryFromDNA(dna), [dna]);
+  const geom = useMemo(() => geometryFromDNA(dna), [dna, growth]);
   const pulseRef = useRef(0);
   const lastWaterRef = useRef<number | undefined>(undefined);
+  const lastGrowthRef = useRef<number | undefined>(undefined);
 
   // gentle bob for demo + pulse on water
   useFrame((state) => {
@@ -34,6 +35,19 @@ export default function PlantRenderer({ dna, position = [0, 0, 0], waterTimestam
 
     pulseRef.current = 1.0; // start pulse
   }, [waterTimestamp]);
+
+  // trigger a smaller pulse when growth increases
+  useEffect(() => {
+    if (growth == null) return;
+    if (lastGrowthRef.current == null) {
+      lastGrowthRef.current = growth;
+      return;
+    }
+    if (growth > (lastGrowthRef.current || 0)) {
+      pulseRef.current = 0.9; // growth pulse
+    }
+    lastGrowthRef.current = growth;
+  }, [growth]);
 
   useFrame((state) => {
     // existing bob/pulse code above runs here

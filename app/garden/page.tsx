@@ -63,6 +63,18 @@ function PlantControls({ plantId }: { plantId: string }) {
     }
   }
 
+  async function onProgress() {
+    if (!user) return setError('Please sign in to interact (magic link).');
+    const undo = addOptimistic('progress');
+    const res = await sendInteraction(plantId, 'progress');
+    if (!res.ok) {
+      undo();
+      setError(res.error || 'Failed to log progress');
+    } else {
+      setError(null);
+    }
+  }
+
   return (
     <div className="p-3 border rounded shadow-sm bg-white">
       <div className="text-sm font-medium">Plant {plantId}</div>
@@ -73,13 +85,14 @@ function PlantControls({ plantId }: { plantId: string }) {
               {loading ? 'Watering…' : 'Water'}
             </button>
             <button onClick={onLike} className="px-3 py-1 border rounded">Like</button>
+            <button onClick={onProgress} className="px-3 py-1 bg-amber-400 text-white rounded">Day of Progress</button>
           </>
         ) : (
           <div className="mt-2">
             <SignIn />
           </div>
         )}
-        <div className="ml-auto text-xs text-slate-500">💧 {counts.water} • ❤️ {counts.like}</div>
+        <div className="ml-auto text-xs text-slate-500">💧 {counts.water} • ❤️ {counts.like} • 🌱 {counts.growth}</div>
       </div>
       {error && <div className="mt-2 text-xs text-rose-600">{error}</div>}
     </div>

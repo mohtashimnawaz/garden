@@ -11,6 +11,60 @@ export type DNA = {
   color?: string;
 };
 
+// Generate DNA tuned to a growth parameter G
+export function generateFromGrowth(G: number, seed = 'default'): DNA {
+  const base = generateDNA(seed);
+  // Map G to iterations/angle/step/scale
+  if (G <= 0) {
+    return {
+      axiom: 'F',
+      rules: { F: 'F' },
+      iterations: 0,
+      angle: 15,
+      step: 0.3,
+      scale: 0.7,
+      color: base.color
+    };
+  }
+
+  if (G < 10) {
+    // small stem with a couple leaves
+    return {
+      axiom: 'F',
+      rules: { F: 'F[+L]F[-L]F' },
+      iterations: 2,
+      angle: 25,
+      step: 0.4,
+      scale: 0.9,
+      color: base.color
+    };
+  }
+
+  if (G < 100) {
+    // medium branching
+    return {
+      axiom: 'F',
+      rules: { F: 'F[+F]F[-F]F' },
+      iterations: Math.min(4, 2 + Math.floor(G / 25)),
+      angle: 22,
+      step: 0.6,
+      scale: 1.0,
+      color: base.color
+    };
+  }
+
+  // G >= 100: complex fractal with occasional flowers
+  return {
+    axiom: 'F',
+    rules: { F: 'F[+F]F[-F]FB' }, // append B as a flower indicator
+    iterations: Math.min(6, 4 + Math.floor((G - 100) / 50)),
+    angle: 20,
+    step: 0.6,
+    scale: 1.0,
+    color: base.color
+  };
+}
+
 // Deterministic DNA generator (seed-based choices)
 export function generateDNA(seed: string, opts: Partial<DNA> = {}): DNA {
   const hash = Array.from(seed).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -76,6 +130,20 @@ export function geometryFromDNA(dna: DNA): THREE.BufferGeometry {
       const cyl = cylinderBetweenPoints(pos.clone(), next.clone(), thickness * dna.scale, thickness * dna.scale);
       geometries.push(cyl);
       pos.copy(next);
+    } else if (ch === 'L') {
+      // simple leaf: small flattened sphere offset slightly to the side
+      const leaf = new THREE.SphereGeometry(0.08 * dna.scale, 8, 6);
+      const leafGeom = new THREE.BufferGeometry().copy(leaf as any);
+      // offset the leaf a bit perpendicular to dir
+      const side = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(0.05 * dna.scale);
+      leafGeom.translate(pos.x + side.x, pos.y + side.y, pos.z + side.z);
+      geometries.push(leafGeom);
+    } else if (ch === 'B') {
+      // flower: small sphere at current position
+      const flower = new THREE.SphereGeometry(0.06 * dna.scale, 8, 6);
+      const fgeom = new THREE.BufferGeometry().copy(flower as any);
+      fgeom.translate(pos.x, pos.y, pos.z);
+      geometries.push(fgeom);
     } else if (ch === '+') {
       // rotate around Z by +angle
       const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angleRad);
@@ -106,5 +174,6 @@ export function geometryFromDNA(dna: DNA): THREE.BufferGeometry {
 export default {
   generateDNA,
   expandLSystem,
-  geometryFromDNA
+  geometryFromDNA,
+  generateFromGrowth
 };
