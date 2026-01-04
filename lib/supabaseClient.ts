@@ -4,10 +4,11 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 let _client: any = null;
 
 function makeStub() {
+  const noopSub = { unsubscribe: () => {} };
   return {
     auth: { getUser: async () => ({ data: { user: null } }) },
     from: (_: string) => ({ insert: async () => ({ error: new Error('Supabase not configured') }) }),
-    channel: () => ({ on: () => ({ subscribe: () => {} }), subscribe: () => ({}) }),
+    channel: () => ({ on: () => ({ subscribe: () => noopSub }), subscribe: () => noopSub }),
     removeChannel: () => {}
   };
 }

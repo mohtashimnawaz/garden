@@ -82,4 +82,6 @@ function PlantControls({ plantId }: { plantId: string }) {
         <div className="ml-auto text-xs text-slate-500">💧 {counts.water} • ❤️ {counts.like}</div>
       </div>
       {error && <div className="mt-2 text-xs text-rose-600">{error}</div>}
+    </div>
+  );
 }

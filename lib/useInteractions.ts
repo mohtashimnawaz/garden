@@ -49,14 +49,27 @@ export function useInteractions(onInsert?: (row: Interaction) => void) {
 
     return () => {
       mounted = false;
-      if (channelRef.current) {
-        // remove channel if supabase client available
+      const ch = channelRef.current;
+      if (ch) {
+        // remove channel if supabase client available, but be defensive about channel shape
         (async () => {
           try {
             const mod = await import('./supabaseClient');
-            mod.supabase.removeChannel(channelRef.current);
+            // Prefer calling unsubscribe directly if available (avoids removeChannel internals
+            // throwing when the channel shape doesn't match expectations).
+            if (typeof ch.unsubscribe === 'function') {
+              try {
+                ch.unsubscribe();
+              } catch (e) {
+                // If direct unsubscribe fails, try supabase.removeChannel as a fallback.
+                try { mod.supabase.removeChannel(ch); } catch (e2) { /* ignore */ }
+              }
+            } else {
+              // Only call removeChannel if it appears safe to do so
+              try { mod.supabase.removeChannel(ch); } catch (e) { /* ignore */ }
+            }
           } catch (e) {
-            // ignore
+            // ignore import or removal errors
           }
         })();
         channelRef.current = null;
@@ -72,7 +85,7 @@ export function useInteractions(onInsert?: (row: Interaction) => void) {
       const userRes = await supabase.auth.getUser();
       const user = userRes.data?.user;
       console.debug('sendInteraction attempt', { plantId, kind, user });
-      if (!user) throw new Error('Not authenticated');
+      if (!user) return { ok: false, error: 'Not authenticated' };
 
       const { data, error } = await supabase.from('interactions').insert([
         {
@@ -84,8 +97,10 @@ export function useInteractions(onInsert?: (row: Interaction) => void) {
       ]).select();
 
       if (error) {
-        console.error('sendInteraction error', error);
-        return { ok: false, error: error.message || error.details || String(error) };
+        // Log full error details to help diagnose 400 responses (RLS / validation issues)
+        try { console.error('sendInteraction error details', JSON.stringify(error, null, 2)); } catch {}
+        console.error('sendInteraction error info', { plantId, kind, payload, error });
+        return { ok: false, error: error.message || error.details || String(error), status: (error as any)?.status };
       }
 
       console.debug('sendInteraction result', { data });

@@ -25,10 +25,13 @@ export default function AuthDebug() {
     try {
       if (!user) return setMsg('not signed in');
       // try to insert an interaction (will be subject to RLS)
-      const { error } = await supabase.from('interactions').insert({ plant_id: 'demo-1', actor: user.id, kind });
-      if (error) setMsg('insert error: ' + (error.message || error.details));
-      else setMsg('insert OK (or accepted by RLS)');
+      const res = await supabase.from('interactions').insert({ plant_id: 'demo-1', actor: user.id, kind });
+      if (res.error) {
+        try { console.error('AuthDebug insert error', JSON.stringify(res.error, null, 2)); } catch {}
+        setMsg('insert error: ' + (res.error.message || res.error.details || String(res.error)));
+      } else setMsg('insert OK (or accepted by RLS)');
     } catch (e: any) {
+      console.error('AuthDebug insert exception', e);
       setMsg('insert failed: ' + (e?.message || String(e)));
     }
   }

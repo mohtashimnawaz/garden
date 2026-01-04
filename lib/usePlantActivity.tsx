@@ -13,18 +13,29 @@ export function usePlantActivity(plantId: string) {
     let mounted = true;
     async function load() {
       try {
-        const { count: waterCount } = await supabase
+        const resWater = await supabase
           .from('interactions')
           .select('*', { count: 'exact', head: true })
           .eq('plant_id', plantId)
           .eq('kind', 'water');
-        const { count: likeCount } = await supabase
+        const resLike = await supabase
           .from('interactions')
           .select('*', { count: 'exact', head: true })
           .eq('plant_id', plantId)
           .eq('kind', 'like');
+
         if (!mounted) return;
-        setCounts({ water: waterCount || 0, like: likeCount || 0 });
+
+        if (resWater.error) {
+          try { console.warn('water count load error', JSON.stringify(resWater.error, null, 2)); } catch {}
+        }
+        if (resLike.error) {
+          try { console.warn('like count load error', JSON.stringify(resLike.error, null, 2)); } catch {}
+        }
+
+        const waterCount = (resWater.count as number) || 0;
+        const likeCount = (resLike.count as number) || 0;
+        setCounts({ water: waterCount, like: likeCount });
       } catch (e) {
         console.warn('failed to load counts', e);
       }
