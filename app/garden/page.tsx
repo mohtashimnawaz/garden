@@ -7,6 +7,7 @@ import { useInteractions } from '../../lib/useInteractions';
 import { useState } from 'react';
 import SignIn from '../../components/Auth/SignIn';
 import { useAuth } from '../../components/Auth/AuthProvider';
+import { usePlantActivity } from '../../lib/usePlantActivity';
 
 export default function GardenPage() {
   // placeholder demo seeds
@@ -33,27 +34,48 @@ function PlantControls({ plantId }: { plantId: string }) {
   const { sendInteraction } = useInteractions();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { counts, addOptimistic } = usePlantActivity(plantId as string);
 
   async function onWater() {
     if (!user) return alert('Please sign in to interact (magic link).');
     setLoading(true);
+    const undo = addOptimistic('water');
     const res = await sendInteraction(plantId, 'water');
     setLoading(false);
-    if (!res.ok) alert('Failed: ' + res.error);
+    if (!res.ok) {
+      undo();
+      alert('Failed: ' + res.error);
+    }
+  }
+
+  async function onLike() {
+    if (!user) return alert('Please sign in to interact (magic link).');
+    const undo = addOptimistic('like');
+    const res = await sendInteraction(plantId, 'like');
+    if (!res.ok) {
+      undo();
+      alert('Failed: ' + res.error);
+    }
   }
 
   return (
-    <div className="p-2 border rounded">
-      <div className="text-sm">Plant {plantId}</div>
-      {user ? (
-        <button onClick={onWater} className="mt-2 px-3 py-1 bg-emerald-600 text-white rounded" disabled={loading}>
-          {loading ? 'Watering…' : 'Water'}
-        </button>
-      ) : (
-        <div className="mt-2">
-          <SignIn />
-        </div>
-      )}
+    <div className="p-3 border rounded shadow-sm bg-white">
+      <div className="text-sm font-medium">Plant {plantId}</div>
+      <div className="mt-2 flex gap-2 items-center">
+        {user ? (
+          <>
+            <button onClick={onWater} className="px-3 py-1 bg-emerald-600 text-white rounded" disabled={loading}>
+              {loading ? 'Watering…' : 'Water'}
+            </button>
+            <button onClick={onLike} className="px-3 py-1 border rounded">Like</button>
+          </>
+        ) : (
+          <div className="mt-2">
+            <SignIn />
+          </div>
+        )}
+        <div className="ml-auto text-xs text-slate-500">💧 {counts.water} • ❤️ {counts.like}</div>
+      </div>
     </div>
   );
 }
