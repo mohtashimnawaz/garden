@@ -5,6 +5,8 @@ import GardenScene from '../../components/GardenScene';
 import { generateDNA } from '../../lib/plant-generator';
 import { useInteractions } from '../../lib/useInteractions';
 import { useState } from 'react';
+import SignIn from '../../components/Auth/SignIn';
+import { useAuth } from '../../components/Auth/AuthProvider';
 
 export default function GardenPage() {
   // placeholder demo seeds
