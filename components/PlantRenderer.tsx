@@ -24,6 +24,8 @@ export default function PlantRenderer({ dna, position = [0, 0, 0], waterTimestam
     }
   });
 
+  const splashRef = useRef<THREE.Mesh>(null);
+
   // trigger pulse when waterTimestamp changes
   useEffect(() => {
     if (!waterTimestamp) return;
@@ -31,20 +33,26 @@ export default function PlantRenderer({ dna, position = [0, 0, 0], waterTimestam
     lastWaterRef.current = waterTimestamp;
 
     pulseRef.current = 1.0; // start pulse
-    // create a temporary bloom/splash by briefly showing a translucent expanding sphere
-    const splash = { t: 0 };
-    let raf = 0;
-    function animateSplash(dt = 0.016) {
-      splash.t += dt;
-      if (splash.t > 0.9) {
-        cancelAnimationFrame(raf);
-        return;
-      }
-      raf = requestAnimationFrame(animateSplash);
-    }
-    raf = requestAnimationFrame(animateSplash);
-    return () => cancelAnimationFrame(raf);
   }, [waterTimestamp]);
+
+  useFrame((state) => {
+    // existing bob/pulse code above runs here
+    if (splashRef.current) {
+      const t = pulseRef.current; // 1.0 -> decays
+      if (t > 0) {
+        const s = 0.3 + (1 - t) * 1.6; // grows outwards as pulse decays
+        splashRef.current.scale.set(s, s, s);
+        const mat = splashRef.current.material as THREE.MeshStandardMaterial;
+        if (mat) {
+          mat.opacity = Math.max(0, t * 0.6);
+          mat.emissiveIntensity = 0.6 * t;
+        }
+      } else {
+        // reset small
+        splashRef.current.scale.set(0.01, 0.01, 0.01);
+      }
+    }
+  });
 
   return (
     <group ref={group} position={position}>
@@ -53,13 +61,13 @@ export default function PlantRenderer({ dna, position = [0, 0, 0], waterTimestam
       </mesh>
 
       {/* expanding translucent splash on water (simple sphere) */}
-      <mesh position={[0, 0.3, 0]}>
+      <mesh ref={splashRef} position={[0, 0.3, 0]} scale={[0.01, 0.01, 0.01]}>
         <sphereGeometry args={[0.01, 12, 8]} />
         <meshStandardMaterial
           transparent
           opacity={0.0}
           emissive={'#8ee7ff'}
-          emissiveIntensity={0.6}
+          emissiveIntensity={0.0}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
