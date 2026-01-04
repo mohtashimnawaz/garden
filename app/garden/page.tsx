@@ -31,9 +31,11 @@ export default function GardenPage() {
 
 function PlantControls({ plantId }: { plantId: string }) {
   const { sendInteraction } = useInteractions();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   async function onWater() {
+    if (!user) return alert('Please sign in to interact (magic link).');
     setLoading(true);
     const res = await sendInteraction(plantId, 'water');
     setLoading(false);
@@ -43,9 +45,15 @@ function PlantControls({ plantId }: { plantId: string }) {
   return (
     <div className="p-2 border rounded">
       <div className="text-sm">Plant {plantId}</div>
-      <button onClick={onWater} className="mt-2 px-3 py-1 bg-emerald-600 text-white rounded" disabled={loading}>
-        {loading ? 'Watering…' : 'Water'}
-      </button>
+      {user ? (
+        <button onClick={onWater} className="mt-2 px-3 py-1 bg-emerald-600 text-white rounded" disabled={loading}>
+          {loading ? 'Watering…' : 'Water'}
+        </button>
+      ) : (
+        <div className="mt-2">
+          <SignIn />
+        </div>
+      )}
     </div>
   );
 }
