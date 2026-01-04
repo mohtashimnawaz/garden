@@ -1,0 +1,30 @@
+{
+  "name": "collaborative-garden",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14",
+    "react": "18",
+    "react-dom": "18",
+    "@supabase/supabase-js": "2",
+    "@react-three/fiber": "8",
+    "three": "0.158",
+    "@react-three/drei": "9",
+    "framer-motion": "10",
+    "tailwindcss": "3",
+    "autoprefixer": "10",
+    "postcss": "8"
+  },
+  "devDependencies": {
+    "typescript": "5",
+    "eslint": "8",
+    "prettier": "2",
+    "@types/react": "18"
+  }
+}
