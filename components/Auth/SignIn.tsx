@@ -6,7 +6,9 @@ import { useAuth } from './AuthProvider';
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<string | null>(null);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
+
+  if (user) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { ensureProfile, getProfile } from '@/lib/auth';
+import { supabase } from '../../lib/supabaseClient';
+import { ensureProfile, getProfile } from '../../lib/auth';
 
 type User = any;
 
