@@ -3,6 +3,7 @@ import React from 'react';
 import { AuthProvider } from '../components/Auth/AuthProvider';
 import SignIn from '../components/Auth/SignIn';
 import UserMenu from '../components/Auth/UserMenu';
+import AuthDebug from '../components/Auth/AuthDebug';
 
 export const metadata = {
   title: 'Collaborative Garden',
@@ -21,6 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="flex items-center gap-4">
                   <SignIn />
                   <UserMenu />
+                  <div className="hidden md:block ml-2">
+                    <AuthDebug />
+                  </div>
                 </div>
               </div>
             </header>

@@ -71,20 +71,27 @@ export function useInteractions(onInsert?: (row: Interaction) => void) {
 
       const userRes = await supabase.auth.getUser();
       const user = userRes.data?.user;
+      console.debug('sendInteraction attempt', { plantId, kind, user });
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase.from('interactions').insert([
+      const { data, error } = await supabase.from('interactions').insert([
         {
           plant_id: plantId,
           actor: user.id,
           kind,
           payload
         }
-      ]);
+      ]).select();
 
-      if (error) throw error;
-      return { ok: true };
+      if (error) {
+        console.error('sendInteraction error', error);
+        return { ok: false, error: error.message || error.details || String(error) };
+      }
+
+      console.debug('sendInteraction result', { data });
+      return { ok: true, data };
     } catch (err: any) {
+      console.error('sendInteraction exception', err);
       return { ok: false, error: err.message || String(err) };
     }
   }

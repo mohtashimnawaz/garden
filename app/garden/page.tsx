@@ -34,6 +34,7 @@ function PlantControls({ plantId }: { plantId: string }) {
   const { sendInteraction } = useInteractions();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { counts, addOptimistic } = usePlantActivity(plantId as string);
 
   async function onWater() {
@@ -44,17 +45,21 @@ function PlantControls({ plantId }: { plantId: string }) {
     setLoading(false);
     if (!res.ok) {
       undo();
-      alert('Failed: ' + res.error);
+      setError(res.error || 'Failed to send interaction');
+    } else {
+      setError(null);
     }
   }
 
   async function onLike() {
-    if (!user) return alert('Please sign in to interact (magic link).');
+    if (!user) return setError('Please sign in to interact (magic link).');
     const undo = addOptimistic('like');
     const res = await sendInteraction(plantId, 'like');
     if (!res.ok) {
       undo();
-      alert('Failed: ' + res.error);
+      setError(res.error || 'Failed to send interaction');
+    } else {
+      setError(null);
     }
   }
 
@@ -76,6 +81,5 @@ function PlantControls({ plantId }: { plantId: string }) {
         )}
         <div className="ml-auto text-xs text-slate-500">💧 {counts.water} • ❤️ {counts.like}</div>
       </div>
-    </div>
-  );
+      {error && <div className="mt-2 text-xs text-rose-600">{error}</div>}
 }
